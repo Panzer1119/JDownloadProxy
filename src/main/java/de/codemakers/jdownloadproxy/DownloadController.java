@@ -68,7 +68,7 @@ public class DownloadController {
         return downloadContainer.getDownloadInfo().getUuid().toString();
     }
     
-    @Get(uri = "/status/byUUID/{uuid}", produces = MediaType.APPLICATION_JSON)
+    @Get(uri = "/status/{uuid}", produces = MediaType.APPLICATION_JSON)
     public String statusDownload(@PathVariable String uuid) throws JsonProcessingException {
         System.out.printf("[DEBUG][%s#statusDownload] uuid=\"%s\"%n", getClass().getSimpleName(), uuid); //DEBUG
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));
@@ -93,7 +93,7 @@ public class DownloadController {
     
     public static final String FILENAME_NONE = "//\\NONE\\//";
     
-    @Get(uri = "/get/byUUID/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM)
+    @Get(uri = "/get/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM)
     //TODO Add parameter if the local file should be deleted after it has been downloaded by the client
     public StreamedFile getDownload(@PathVariable String uuid, @QueryValue(defaultValue = FILENAME_NONE) String filename, @QueryValue(defaultValue = "true") boolean delete) throws FileNotFoundException {
         System.out.printf("[DEBUG][%s#getDownload] uuid=\"%s\", filename=\"%s\", delete=%b%n", getClass().getSimpleName(), uuid, filename, delete); //DEBUG
@@ -130,7 +130,7 @@ public class DownloadController {
         return new StreamedFile(new FileInputStream(downloadContainer.getFile()), MediaType.APPLICATION_OCTET_STREAM_TYPE).attach(filename);
     }
     
-    @Get(uri = "/remove/byUUID/{uuid}", produces = MediaType.APPLICATION_JSON)
+    @Get(uri = "/remove/{uuid}", produces = MediaType.APPLICATION_JSON)
     public String removeDownload(@PathVariable String uuid, @QueryValue(defaultValue = "false") boolean delete) {
         System.out.printf("[DEBUG][%s#removeDownload] uuid=\"%s\", delete=%b%n", getClass().getSimpleName(), uuid, delete); //DEBUG
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));

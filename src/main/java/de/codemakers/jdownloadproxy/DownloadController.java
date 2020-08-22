@@ -24,6 +24,7 @@ import de.codemakers.jdownloadproxy.download.Downloader;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.server.types.files.StreamedFile;
 
@@ -57,15 +58,17 @@ public class DownloadController {
     }
     
     @Get(uri = "/add", produces = MediaType.TEXT_PLAIN)
-    public String addDownload(@QueryValue String url, @QueryValue(defaultValue = "0") boolean forceDownload) throws MalformedURLException {
+    public String addDownload(@QueryValue String url, @QueryValue(defaultValue = "false") boolean forceDownload) throws MalformedURLException {
+        System.out.printf("[DEBUG][%s#addDownload] url=\"%s\", forceDownload=%b%n", getClass().getSimpleName(), url, forceDownload); //DEBUG
         System.out.printf("[DEBUG][%s#addDownload] forceDownload=%b%n", getClass().getSimpleName(), forceDownload); //DEBUG
         final DownloadContainer downloadContainer = Downloader.createDownloadContainer(new URL(url), forceDownload);
         downloadContainer.startAsync();
         return downloadContainer.getDownloadInfo().getUuid().toString();
     }
     
-    @Get(uri = "/status", produces = MediaType.APPLICATION_JSON)
-    public String statusDownload(@QueryValue String uuid) throws JsonProcessingException {
+    @Get(uri = "/status/{uuid}", produces = MediaType.APPLICATION_JSON)
+    public String statusDownload(@PathVariable String uuid) throws JsonProcessingException {
+        System.out.printf("[DEBUG][%s#statusDownload] uuid=\"%s\"%n", getClass().getSimpleName(), uuid); //DEBUG
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));
         System.out.printf("[DEBUG][%s#statusDownload] downloadContainer=%s%n", getClass().getSimpleName(), downloadContainer); //DEBUG
         if (downloadContainer == null) {
@@ -76,8 +79,9 @@ public class DownloadController {
     
     public static final String FILENAME_NONE = "//\\NONE\\//";
     
-    @Get(uri = "/get", produces = MediaType.APPLICATION_OCTET_STREAM) //TODO Add parameter if the local file should be deleted after it has been downloaded by the client
-    public StreamedFile getDownload(@QueryValue String uuid, @QueryValue(defaultValue = FILENAME_NONE) String filename, @QueryValue(defaultValue = "1") boolean delete) throws FileNotFoundException {
+    @Get(uri = "/get/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM) //TODO Add parameter if the local file should be deleted after it has been downloaded by the client
+    public StreamedFile getDownload(@PathVariable String uuid, @QueryValue(defaultValue = FILENAME_NONE) String filename, @QueryValue(defaultValue = "true") boolean delete) throws FileNotFoundException {
+        System.out.printf("[DEBUG][%s#getDownload] uuid=\"%s\", filename=\"%s\", delete=%b%n", getClass().getSimpleName(), uuid, filename, delete); //DEBUG
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));
         System.out.printf("[DEBUG][%s#getDownload] downloadContainer=%s%n", getClass().getSimpleName(), downloadContainer); //DEBUG
         if (downloadContainer == null || !downloadContainer.getDownloadInfo().isDone()) {
@@ -90,8 +94,9 @@ public class DownloadController {
         return new StreamedFile(new FileInputStream(downloadContainer.getFile()), MediaType.APPLICATION_OCTET_STREAM_TYPE).attach(filename);
     }
     
-    @Get(uri = "/remove", produces = MediaType.APPLICATION_JSON)
-    public String removeDownload(@QueryValue String uuid, @QueryValue(defaultValue = "0") boolean delete) {
+    @Get(uri = "/remove/{uuid}", produces = MediaType.APPLICATION_JSON)
+    public String removeDownload(@PathVariable String uuid, @QueryValue(defaultValue = "false") boolean delete) {
+        System.out.printf("[DEBUG][%s#removeDownload] uuid=\"%s\", delete=%b%n", getClass().getSimpleName(), uuid, delete); //DEBUG
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));
         System.out.printf("[DEBUG][%s#removeDownload] downloadContainer=%s%n", getClass().getSimpleName(), downloadContainer); //DEBUG
         if (downloadContainer == null) {

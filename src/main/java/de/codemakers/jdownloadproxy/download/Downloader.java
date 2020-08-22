@@ -287,7 +287,7 @@ public class Downloader {
             file.delete();
         }
         Downloader.saveHashes();
-        System.out.printf("[DEBUG][%s#removeFile] Removed \"%s\" and \"%s\" (delete: %b)", Downloader.class.getSimpleName(), file.getAbsolutePath(), url, delete);
+        System.out.printf("[DEBUG][%s#removeFile] Removed \"%s\" and \"%s\" (delete: %b)%n", Downloader.class.getSimpleName(), file.getAbsolutePath(), url, delete);
     }
     
 }

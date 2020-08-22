@@ -156,8 +156,10 @@ public class DownloadController {
             boolean deleted = false;
             if (delete) {
                 final String hash = Downloader.getHashForURL(url_);
-                final File file = Downloader.getFileForHash(hash);
-                deleted = Downloader.removeFile(file, url_, true);
+                if (hash != null) {
+                    final File file = Downloader.getFileForHash(hash);
+                    deleted = Downloader.removeFile(file, url_, true);
+                }
             }
             return String.format("{\"removed\": 0, \"deleted\": %b}", deleted);
         }

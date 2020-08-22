@@ -279,11 +279,14 @@ public class Downloader {
     }
     
     public static boolean removeFile(File file, URL url, boolean delete) {
+        if (file == null || url == null) {
+            return false;
+        }
         final String hash = file.getName();
         Downloader.removeHashForURL(url);
         Downloader.removeFilenameForURL(url);
         Downloader.createFileForHash(hash);
-        if (delete) {
+        if (delete && file.exists()) {
             file.delete();
         }
         Downloader.saveHashes();

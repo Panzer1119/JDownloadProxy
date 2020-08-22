@@ -27,36 +27,33 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.server.types.files.StreamedFile;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 @Controller("/download")
 public class DownloadController {
     
-    @Get(produces = MediaType.APPLICATION_OCTET_STREAM)
-    public StreamedFile download(@QueryValue("url") String url) throws FileNotFoundException {
-        System.out.println("url=" + url);
-        /*
-        try (final FileInputStream fileInputStream = new FileInputStream(new File("O:\\ArchiveBox\\MCPRBackup\\Live\\archive\\1597545353\\media\\Friday Facts #351 - Beacon re-redesign & Simplified fluid mixing _ Factorio (2)-fff-351-2.info.json"))) {
-            return new StreamedFile(fileInputStream, MediaType.TEXT_JSON_TYPE);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+    @Get(uri = "/shutdown", produces = MediaType.APPLICATION_JSON)
+    public String shutdown(@QueryValue(defaultValue = "-1") long delay) {
+        if (delay > 0) {
+            System.out.printf("Shutdown requested in %d ms%n", delay);
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    System.exit(0);
+                }
+            }, delay);
+            return String.format("{\"done\": %b, \"delay\": \"%d\"}", true, delay);
+        } else {
+            System.out.println("Shutting down");
+            System.exit(0);
+            return String.format("{\"done\": %b}", true);
         }
-        return null;
-        */
-        try (final FileInputStream fileInputStream = new FileInputStream(new File("O:\\ArchiveBox\\MCPRBackup\\Live\\archive\\1597545353\\media\\Friday Facts #351 - Beacon re-redesign & Simplified fluid mixing _ Factorio (2)-fff-351-2.mp4"))) {
-            return new StreamedFile(fileInputStream, MediaType.APPLICATION_OCTET_STREAM_TYPE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
     
     @Get(uri = "/add", produces = MediaType.TEXT_PLAIN)

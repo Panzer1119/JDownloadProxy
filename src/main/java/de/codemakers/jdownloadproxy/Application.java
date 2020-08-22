@@ -35,7 +35,7 @@ public class Application {
             new Thread(() -> {
                 try {
                     final int millis = Integer.parseInt(args[0]);
-                    System.out.printf("Sleeping %d ms%n", millis);
+                    System.out.printf("Sleeping %d ms and then shutting down%n", millis);
                     Thread.sleep(millis);
                     System.exit(0);
                 } catch (InterruptedException e) {

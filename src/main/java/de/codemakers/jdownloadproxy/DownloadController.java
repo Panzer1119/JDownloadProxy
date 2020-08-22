@@ -28,6 +28,7 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.server.types.files.StreamedFile;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
@@ -152,7 +153,13 @@ public class DownloadController {
         final List<DownloadContainer> downloadContainers = Downloader.getDownloadContainers().stream().filter((downloadContainer) -> url_.equals(downloadContainer.getDownloadInfo().getUrl())).collect(Collectors.toList());
         System.out.printf("[DEBUG][%s#removeDownload] downloadContainers=%s%n", getClass().getSimpleName(), downloadContainers); //DEBUG
         if (downloadContainers.isEmpty() || !downloadContainers.stream().map(DownloadContainer::getDownloadInfo).allMatch(DownloadInfo::isDone)) {
-            return "{\"removed\": 0, \"deleted\": false}";
+            boolean deleted = false;
+            if (delete) {
+                final String hash = Downloader.getHashForURL(url_);
+                final File file = Downloader.getFileForHash(hash);
+                deleted = Downloader.removeFile(file, url_, true);
+            }
+            return String.format("{\"removed\": 0, \"deleted\": %b}", deleted);
         }
         int removed = 0;
         for (DownloadContainer downloadContainer : downloadContainers) {

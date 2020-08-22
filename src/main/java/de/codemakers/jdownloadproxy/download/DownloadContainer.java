@@ -23,11 +23,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 public class DownloadContainer {
+    
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
     
     private final DownloadInfo downloadInfo;
     private transient File file;
@@ -60,7 +63,9 @@ public class DownloadContainer {
             final String hash = Downloader.getHashForURL(url);
             final File file = Downloader.getFileForHash(hash);
             final String filename = Downloader.getFilenameForURL(url);
-            if (file != null) {
+            if (file != null && file.exists()) {
+                getDownloadInfo().setTotalBytes(file.length());
+                getDownloadInfo().setReceivedBytes(file.length());
                 finish(file, filename, hash);
                 return true;
             } else {
@@ -107,6 +112,7 @@ public class DownloadContainer {
     }
     
     public boolean start(boolean forceDownload) {
+        getDownloadInfo().setTimestampStartNow();
         final DownloadStatus downloadStatus = getDownloadInfo().getDownloadStatus();
         if (downloadStatus.isDone() || downloadStatus.isLocked()) {
             return false;
@@ -129,31 +135,46 @@ public class DownloadContainer {
     }
     
     private boolean download() {
-        final File tempFile = Downloader.createTempFileForUUID(getDownloadInfo().getUuid());
-        final URL url = getDownloadInfo().getUrl();
-        try (final InputStream inputStream = url.openStream()) {
-            String filename = url.getFile();
-            final int index = filename.lastIndexOf("/");
-            if (index != -1) {
-                filename = filename.substring(index + 1);
+        final DownloadInfo downloadInfo = getDownloadInfo();
+        final File tempFile = Downloader.createTempFileForUUID(downloadInfo.getUuid());
+        final URL url = downloadInfo.getUrl();
+        try {
+            final URLConnection urlConnection = url.openConnection();
+            urlConnection.connect();
+            final long totalBytes = urlConnection.getContentLengthLong();
+            downloadInfo.setTotalBytes(totalBytes);
+            try (final InputStream inputStream = urlConnection.getInputStream()) {
+                String filename = url.getFile();
+                final int index = filename.lastIndexOf("/");
+                if (index != -1) {
+                    filename = filename.substring(index + 1);
+                }
+                filename = Util.sanitizeFilename(filename);
+                long transferred = 0;
+                try (final FileOutputStream fileOutputStream = new FileOutputStream(tempFile, false)) {
+                    //transferred = inputStream.transferTo(fileOutputStream); //OLD
+                    final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+                    int read;
+                    while ((read = inputStream.read(buffer, 0, DEFAULT_BUFFER_SIZE)) >= 0) {
+                        fileOutputStream.write(buffer, 0, read);
+                        transferred += read;
+                        downloadInfo.setReceivedBytes(transferred);
+                    }
+                }
+                System.out.printf("[DEBUG][%s#download] Transferred %d Bytes from \"%s\" to \"%s\"%n", getClass().getSimpleName(), transferred, url, tempFile.getAbsolutePath()); //DEBUG
+                final Map.Entry<File, String> entry = Downloader.handleFile(url, tempFile, filename, isForceDownload());
+                if (entry == null) {
+                    error(new NullPointerException("entry is null"));
+                    return false;
+                }
+                final File file = entry.getKey();
+                if (file == null) {
+                    error(new NullPointerException("file is null"));
+                    return false;
+                }
+                finish(file, filename, entry.getValue());
+                return true;
             }
-            filename = Util.sanitizeFilename(filename);
-            long transferred;
-            try (final FileOutputStream fileOutputStream = new FileOutputStream(tempFile, false)) {
-                transferred = inputStream.transferTo(fileOutputStream);
-            }
-            System.out.printf("[DEBUG][%s#download] Transferred %d Bytes from \"%s\" to \"%s\"%n", getClass().getSimpleName(), transferred, url, tempFile.getAbsolutePath()); //DEBUG
-            final Map.Entry<File, String> entry = Downloader.handleFile(url, tempFile, filename, isForceDownload());
-            if (entry == null) {
-                error(new NullPointerException("entry is null"));
-                return false;
-            } final File file = entry.getKey();
-            if (file == null) {
-                error(new NullPointerException("file is null"));
-                return false;
-            }
-            finish(file, filename, entry.getValue());
-            return true;
         } catch (Exception ex) {
             error(ex);
             return false;
@@ -161,7 +182,7 @@ public class DownloadContainer {
     }
     
     private void finish(File file, String filename, String hash) {
-        getDownloadInfo().setTimestampNow();
+        getDownloadInfo().setTimestampEndNow();
         System.out.printf("[DEBUG][%s#finish] Finished downloading: \"%s\"%n", getClass().getSimpleName(), getDownloadInfo().getUrl()); //DEBUG
         setFile(file);
         getDownloadInfo().setFilename(filename);
@@ -170,7 +191,7 @@ public class DownloadContainer {
     }
     
     private void error(Throwable throwable) {
-        getDownloadInfo().setTimestampNow();
+        getDownloadInfo().setTimestampEndNow();
         System.err.printf("[ERROR][%s#error] Failed downloading: \"%s\"%n", getClass().getSimpleName(), getDownloadInfo().getUrl()); //DEBUG
         if (throwable != null) {
             throwable.printStackTrace(); //DEBUG

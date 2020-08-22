@@ -40,7 +40,10 @@ public class DownloadInfo {
     private String filename;
     private volatile DownloadStatus downloadStatus;
     private String hash;
-    private ZonedDateTime timestamp = null;
+    private ZonedDateTime timestampStart = null;
+    private ZonedDateTime timestampEnd = null;
+    private long totalBytes = -1;
+    private long receivedBytes = -1;
     
     public DownloadInfo(UUID uuid, URL url, DownloadStatus downloadStatus, String filename, String hash) {
         this.uuid = uuid;
@@ -100,17 +103,48 @@ public class DownloadInfo {
         return this;
     }
     
-    public ZonedDateTime getTimestamp() {
-        return timestamp;
+    public ZonedDateTime getTimestampStart() {
+        return timestampStart;
     }
     
-    public DownloadInfo setTimestamp(ZonedDateTime timestamp) {
-        this.timestamp = timestamp;
+    public DownloadInfo setTimestampStart(ZonedDateTime timestampStart) {
+        this.timestampStart = timestampStart;
         return this;
     }
     
-    public DownloadInfo setTimestampNow() {
-        return setTimestamp(ZonedDateTime.now());
+    public DownloadInfo setTimestampStartNow() {
+        return setTimestampStart(ZonedDateTime.now());
+    }
+    
+    public ZonedDateTime getTimestampEnd() {
+        return timestampEnd;
+    }
+    
+    public DownloadInfo setTimestampEnd(ZonedDateTime timestampEnd) {
+        this.timestampEnd = timestampEnd;
+        return this;
+    }
+    
+    public DownloadInfo setTimestampEndNow() {
+        return setTimestampEnd(ZonedDateTime.now());
+    }
+    
+    public long getTotalBytes() {
+        return totalBytes;
+    }
+    
+    public DownloadInfo setTotalBytes(long totalBytes) {
+        this.totalBytes = totalBytes;
+        return this;
+    }
+    
+    public long getReceivedBytes() {
+        return receivedBytes;
+    }
+    
+    public DownloadInfo setReceivedBytes(long receivedBytes) {
+        this.receivedBytes = receivedBytes;
+        return this;
     }
     
     @Override
@@ -132,7 +166,7 @@ public class DownloadInfo {
     
     @Override
     public String toString() {
-        return "DownloadInfo{" + "uuid=" + uuid + ", url=" + url + ", filename='" + filename + '\'' + ", downloadStatus=" + downloadStatus + ", hash='" + hash + '\'' + ", timestamp=" + timestamp + '}';
+        return "DownloadInfo{" + "uuid=" + uuid + ", url=" + url + ", filename='" + filename + '\'' + ", downloadStatus=" + downloadStatus + ", hash='" + hash + '\'' + ", timestampStart=" + timestampStart + ", timestampEnd=" + timestampEnd + ", totalBytes=" + totalBytes + ", receivedBytes=" + receivedBytes + '}';
     }
     
     public static class DownloadInfoSerializer extends StdSerializer<DownloadInfo> {
@@ -151,7 +185,11 @@ public class DownloadInfo {
             jsonGenerator.writeBooleanField("done", downloadInfo.getDownloadStatus().isDone());
             jsonGenerator.writeStringField("hash", downloadInfo.getHash());
             jsonGenerator.writeStringField("hash_sha256_base64", downloadInfo.getHash());
-            jsonGenerator.writeStringField("timestamp", downloadInfo.getTimestamp() == null ? null : downloadInfo.getTimestamp().format(DateTimeFormatter.ISO_DATE_TIME));
+            jsonGenerator.writeStringField("timestamp", downloadInfo.getTimestampStart() == null ? null : downloadInfo.getTimestampStart().format(DateTimeFormatter.ISO_DATE_TIME));
+            jsonGenerator.writeStringField("timestamp_start", downloadInfo.getTimestampStart() == null ? null : downloadInfo.getTimestampStart().format(DateTimeFormatter.ISO_DATE_TIME));
+            jsonGenerator.writeStringField("timestamp_end", downloadInfo.getTimestampEnd() == null ? null : downloadInfo.getTimestampEnd().format(DateTimeFormatter.ISO_DATE_TIME));
+            jsonGenerator.writeStringField("totalBytes", "" + downloadInfo.getTotalBytes());
+            jsonGenerator.writeStringField("receivedBytes", "" + downloadInfo.getReceivedBytes());
             jsonGenerator.writeEndObject();
         }
         

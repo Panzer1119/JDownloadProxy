@@ -278,4 +278,16 @@ public class Downloader {
         return DOWNLOAD_CONTAINERS.removeIf((downloadContainer) -> uuid.equals(downloadContainer.getDownloadInfo().getUuid()));
     }
     
+    public static void removeFile(File file, URL url, boolean delete) {
+        final String hash = file.getName();
+        Downloader.removeHashForURL(url);
+        Downloader.removeFilenameForURL(url);
+        Downloader.createFileForHash(hash);
+        if (delete) {
+            file.delete();
+        }
+        Downloader.saveHashes();
+        System.out.printf("[DEBUG][%s#removeFile] Removed \"%s\" and \"%s\" (delete: %b)", Downloader.class.getSimpleName(), file.getAbsolutePath(), url, delete);
+    }
+    
 }

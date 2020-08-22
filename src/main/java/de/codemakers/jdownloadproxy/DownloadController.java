@@ -76,8 +76,8 @@ public class DownloadController {
     
     public static final String FILENAME_NONE = "//\\NONE\\//";
     
-    @Get(uri = "/get", produces = MediaType.APPLICATION_OCTET_STREAM)
-    public StreamedFile getDownload(@QueryValue String uuid, @QueryValue(defaultValue = FILENAME_NONE) String filename) throws FileNotFoundException {
+    @Get(uri = "/get", produces = MediaType.APPLICATION_OCTET_STREAM) //TODO Add parameter if the local file should be deleted after it has been downloaded by the client
+    public StreamedFile getDownload(@QueryValue String uuid, @QueryValue(defaultValue = FILENAME_NONE) String filename, @QueryValue(defaultValue = "1") boolean delete) throws FileNotFoundException {
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));
         System.out.printf("[DEBUG][%s#getDownload] downloadContainer=%s%n", getClass().getSimpleName(), downloadContainer); //DEBUG
         if (downloadContainer == null || !downloadContainer.getDownloadInfo().isDone()) {
@@ -91,13 +91,16 @@ public class DownloadController {
     }
     
     @Get(uri = "/remove", produces = MediaType.APPLICATION_JSON)
-    public String removeDownload(@QueryValue String uuid) {
+    public String removeDownload(@QueryValue String uuid, @QueryValue(defaultValue = "0") boolean delete) {
         final DownloadContainer downloadContainer = Downloader.getDownloadContainer(UUID.fromString(uuid));
         System.out.printf("[DEBUG][%s#removeDownload] downloadContainer=%s%n", getClass().getSimpleName(), downloadContainer); //DEBUG
         if (downloadContainer == null) {
-            return "{\"removed\": false}";
+            return "{\"removed\": false, \"deleted\": false}";
         }
-        return String.format("{\"removed\": %b}", Downloader.removeDownloadContainer(downloadContainer.getDownloadInfo().getUuid()));
+        if (delete) {
+            Downloader.removeFile(downloadContainer.getFile(), downloadContainer.getDownloadInfo().getUrl(), true);
+        }
+        return String.format("{\"removed\": %b, \"deleted\": %b}", Downloader.removeDownloadContainer(downloadContainer.getDownloadInfo().getUuid()), delete);
     }
     
 }

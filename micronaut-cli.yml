@@ -1,5 +1,5 @@
 applicationType: default
-defaultPackage: jdownloadproxy
+defaultPackage: de.codemakers.jdownloadproxy
 testFramework: junit
 sourceLanguage: java
 buildTool: gradle

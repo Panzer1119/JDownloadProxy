@@ -39,7 +39,7 @@ dependencies {
 
 test.classpath += configurations.developmentOnly
 
-mainClassName = "jdownloadproxy.Application"
+mainClassName = "de.codemakers.jdownloadproxy.Application"
 
 // use JUnit 5 platform
 test {
